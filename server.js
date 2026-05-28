@@ -21,9 +21,19 @@ function criarCliente() {
     status = 'conectando';
     ultimoErro = null;
 
+    const puppeteerOpts = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process']
+    };
+    // Use puppeteer's bundled Chrome if available
+    try {
+        const puppeteerPath = require('puppeteer').executablePath();
+        puppeteerOpts.executablePath = puppeteerPath;
+    } catch(e) {}
+
     client = new Client({
         authStrategy: new LocalAuth(),
-        puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+        puppeteer: puppeteerOpts
     });
 
     client.on('qr', async qr => {
