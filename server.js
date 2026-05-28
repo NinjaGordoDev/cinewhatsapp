@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const qrcode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const app = express();
 
@@ -25,11 +27,25 @@ function criarCliente() {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process']
     };
-    // Use puppeteer's bundled Chrome if available
-    try {
-        const puppeteerPath = require('puppeteer').executablePath();
-        puppeteerOpts.executablePath = puppeteerPath;
-    } catch(e) {}
+    // Find Chrome
+    const chromePaths = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        '/opt/render/.cache/puppeteer/chrome/linux-148.0.7778.97/chrome-linux64/chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium'
+    ];
+    for (const p of chromePaths) {
+        if (p && fs.existsSync(p)) { puppeteerOpts.executablePath = p; break; }
+    }
+    // Check node_modules puppeteer
+    if (!puppeteerOpts.executablePath) {
+        try {
+            const pp = require('puppeteer');
+            const ep = pp.executablePath();
+            if (fs.existsSync(ep)) puppeteerOpts.executablePath = ep;
+        } catch(e) {}
+    }
 
     client = new Client({
         authStrategy: new LocalAuth(),
