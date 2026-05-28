@@ -30,17 +30,18 @@ function criarCliente() {
     // Find Chrome
     const chromePaths = [
         process.env.PUPPETEER_EXECUTABLE_PATH,
-        '/opt/render/.cache/puppeteer/chrome/linux-1221856/chrome-linux64/chrome',
-        '/opt/render/.cache/puppeteer/chrome/linux-148.0.7778.97/chrome-linux64/chrome',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/google-chrome',
-        '/usr/bin/chromium'
     ];
+    // scan puppeteer cache dir for chrome
+    const cacheDir = process.env.PUPPETEER_CACHE_DIR || '/opt/render/.cache/puppeteer';
+    if (fs.existsSync(cacheDir)) {
+        const walk = (dir) => { try { fs.readdirSync(dir).forEach(f => { const p = path.join(dir, f); if (fs.statSync(p).isDirectory()) walk(p); else if (f === 'chrome') chromePaths.push(p); }); } catch(e) {} };
+        walk(cacheDir);
+    }
     for (const p of chromePaths) {
-        if (p && fs.existsSync(p)) { puppeteerOpts.executablePath = p; break; }
+        if (p && fs.existsSync(p)) { puppeteerOpts.executablePath = p; console.log('Chrome encontrado:', p); break; }
     }
     if (!puppeteerOpts.executablePath) {
-        console.log('Chrome not found. Check PUPPETEER_EXECUTABLE_PATH env var.');
+        console.log('Chrome not found. Set PUPPETEER_EXECUTABLE_PATH env var.');
     }
 
     client = new Client({
